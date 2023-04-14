@@ -1,0 +1,67 @@
+---
+title: "virome_cluster"
+author: "Ming Yan"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: flatly
+    code_download: true
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+```
+
+# Load libraries
+```{r}
+library(tidyverse)
+library(ComplexHeatmap)
+```
+
+```{r}
+virome <- read.csv("co_occurance_matrix_RVD.csv")
+metadata <- read.csv("clustering_anno.csv")
+metadata <- metadata %>% mutate(project = factor(project, levels = colnames(virome))) %>% arrange(project)
+
+metadata[metadata == "Bos_taurus"] <- "Bos taurus"
+metadata[metadata == "Capra_hircus"] <- "Capra hircus"
+metadata[metadata == "Ovis_aries"] <- "Ovis aries"
+```
+
+# clustering
+```{r}
+heatmap_pre <- Heatmap(virome)
+metadata_reorder <- metadata[column_order(heatmap_pre),]
+ha = HeatmapAnnotation(Species = metadata_reorder$species,
+                       Country =  metadata_reorder$geography,
+                       "Collection method" = metadata_reorder$collection_method,
+                       "Beef or dairy" = metadata_reorder$beef_or_dairy,
+                       annotation_name_gp= gpar(fontsize = 10),
+                    col = list(Species = c("Bos taurus" = "#fe0000", "Ovis aries" = "#806b00", "Capra hircus" = "#0026ff"),
+               Country = c("China" = "#800001", "UK" = "#00fe21", "New Zeland" = "#001280", "USA" = "#fe6a00", "Canada" = "#007f0e"),
+               "Collection method" = c("slaughter" = "#b100fe", "oral tube" = "#803400", "cannulate" = "#0094fe", "na" = "grey"),
+               "Beef or dairy" = c("beef" = "#590080", "dairy" = "#ffd800", "na" = "grey"))
+    )
+
+heatmap_ready <- Heatmap(virome, top_annotation = ha, column_dend_height = unit(0.5, "in"), 
+                         column_km = 5, cluster_rows = FALSE, #show_heatmap_legend = FALSE,
+                          column_names_gp = gpar(fontsize = 8),
+                         row_names_gp = gpar(fontsize = 8),
+                        heatmap_legend_param = list(
+    at = c(0, 5000, 10000),
+    labels = c("0", "5000", "10000"),
+    title = "# Shared vOTU",
+    legend_height = unit(1, "in"),
+    title_position = "topcenter", 
+    legend_direction = "horizontal"
+))
+                        
+
+svg(file="rvd_clustering.svg", width = 7, height = 7)
+draw(heatmap_ready, legend_grouping = "original", heatmap_legend_side = "bottom")
+dev.off()
+
+```

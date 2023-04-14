@@ -1,0 +1,188 @@
+---
+title: "enriched virome Anderson et al. 2017"
+author: "Ming Yan"
+date: "1/3/2023"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: flatly
+    code_download: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+```
+
+
+## load library
+```{r}
+library(tidyverse)
+library(ggpubr)
+```
+
+## load data
+```{r}
+df <- read_tsv("/fs/scratch/PAS0439/Ming/databases/anderson_2017_rumen_virome/enriched_vs_metagenome_nvcontigs.tsv")
+metadata <- read_tsv("/fs/scratch/PAS0439/Ming/databases/anderson_2017_rumen_virome/metadata.tsv")
+lyso <- read_tsv("/fs/scratch/PAS0439/Ming/databases/anderson_2017_rumen_virome/lyso_ratio_anderson.tsv")
+cluster <- read_tsv("/fs/scratch/PAS0439/Ming/databases/anderson_2017_rumen_virome/cluster_rvd_anderson.tsv") 
+```
+
+# stats
+```{r}
+df_ready <- df %>% left_join(metadata, by = c("sample" = "id"))
+wilcox_out <- pairwise.wilcox.test(df_ready$vcontigs_ratio, df_ready$enriched_or_not,
+                 p.adjust.method = "BH")$p.value %>% as.data.frame()
+
+get_star <- function(x){
+  ifelse(x < 0.001, "***", ifelse(x < 0.01, "**", "_"))
+}
+
+wilcox_out <- wilcox_out %>% mutate_all(get_star)
+enriched_vs_deep <- wilcox_out["yes", "deep"]
+enriched_vs_no <- wilcox_out["yes", "no"]
+deep_vs_no <- wilcox_out["no", "deep"]
+anno <- c(enriched_vs_deep, deep_vs_no, enriched_vs_no)
+```
+
+# visualization
+```{r}
+# clearer variable name
+df_ready$enriched_or_not <- df_ready$enriched_or_not %>% str_replace("yes", "Enriched & Ion torrent PGM") %>% str_replace("no", "Not enriched & Ion torrent PGM") %>% str_replace("deep", "Enriched & Deep Illumina Miseq") 
+
+df_ready <- df_ready %>% mutate(enriched_or_not =  factor(enriched_or_not, levels = c("Enriched & Ion torrent PGM", "Enriched & Deep Illumina Miseq", "Not enriched & Ion torrent PGM")))
+
+vcontigs_ratio <- df_ready %>% ggplot(aes(x = enriched_or_not, y = vcontigs_ratio)) + geom_boxplot(aes(color = enriched_or_not), outlier.shape = NA, width=0.5) +   geom_jitter(aes(color = enriched_or_not)) + theme_minimal() + labs(x = "Viral enrichment and sequencing platform", y = "viral contigs / total contigs (> 5000 bp)") + theme(legend.position = "none", axis.title=element_text(size=10)) 
+
+vcontigs_ratio
+```
+
+```{r}
+annotation_bar <- data.frame(xmin = c("Enriched & Ion torrent PGM", "Enriched & Deep Illumina Miseq", "Enriched & Ion torrent PGM"),
+                             xmax = c("Enriched & Deep Illumina Miseq", "Not enriched & Ion torrent PGM", "Not enriched & Ion torrent PGM"),
+                             y.position = c(1.05, 0.85, 1.15), label = anno) 
+
+annotation_bar_with_anno <- vcontigs_ratio + geom_bracket(data = annotation_bar) + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2)) + 
+  geom_text(x = -Inf, y = Inf, label = "a", hjust = -0.5, vjust = 1) + labs(x = "")
+
+annotation_bar_with_anno
+```
+# ratio lysogenic, enriched vs. total contigs
+```{r}
+fisher.test(lyso)$p.value
+
+```
+# ratio clustered with RVD
+```{r}
+fisher.test(cluster)$p.value
+
+```
+
+# plot
+```{r}
+lyso_for_plot <- data.frame("Lysogenic_Enriched" = lyso$enriched[1], "Lytic_Enriched" = lyso$enriched[2] - lyso$enriched[1], "Lysogenic_Not" = lyso$metagenome[1], "Lytic_Not" = lyso$metagenome[2] -  lyso$metagenome[1])
+
+lyso_for_plot <- lyso_for_plot %>% pivot_longer(col = colnames(lyso_for_plot), names_to = c("lyso_or_lytic", "Enriched"), values_to = "ncontigs", names_sep = "_")
+
+lyso_for_plot[lyso_for_plot$Enriched == "Not", "Enriched"] <- "Not enriched"
+
+lyso_for_plot_percent <- lyso_for_plot %>% group_by(Enriched) %>% mutate(ncontigs_percent = ncontigs/sum(ncontigs))
+
+
+
+lyso_plot <- lyso_for_plot_percent %>% ggplot() + geom_bar(aes(fill = lyso_or_lytic, y = ncontigs_percent, x = Enriched), position = "stack", stat = "identity") +  labs(x = "", y = "Proportion of lysogenic viruses") +
+  theme_minimal() + geom_bracket(xmin = 1, xmax = 2, y.position = 1.05, label = "NS") +
+  theme( legend.position = "bottom", legend.title = element_blank(), axis.title=element_text(size=10)) 
+
+lyso_plot
+```
+
+# annotation 
+```{r}
+lytic_enriched_y = (lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Enriched", "ncontigs_percent"] %>% unlist())/2
+
+lyso_enriched_y = (lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Enriched", "ncontigs_percent"] %>% unlist() + 1)/2
+
+lytic_not_y = (lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs_percent"] %>% unlist())/2
+
+lyso_not_y = (lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs_percent"] %>% unlist() + 1)/2
+
+lytic_enriched_anno <- lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
+
+lyso_enriched_anno = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lysogenic" & lyso_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
+
+lytic_not_anno = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+
+lyso_not_anno = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lysogenic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+
+
+lyso_anno <- data.frame(x = c("Enriched", "Enriched", "Not enriched", "Not enriched"), y = c(lytic_enriched_y, lyso_enriched_y, lytic_not_y, lyso_not_y), anno = c(lytic_enriched_anno, lyso_enriched_anno, lytic_not_anno, lyso_not_anno))
+
+
+lyso_plot_final <- lyso_plot + annotate("text", x = lyso_anno$x, y = lyso_anno$y, label = lyso_anno$anno) +
+   geom_text(x = -Inf, y = Inf, label = "b", hjust = -0.5, vjust = 1)
+
+lyso_plot_final
+```
+
+# cluster with rvd
+```{r}
+cluster_for_plot <- data.frame("Enriched_Clustered" = cluster$enriched[1], "Enriched_Unclustered" = cluster$enriched[2] - cluster$enriched[1], "Not_Clustered" = cluster$metagenome[1], "Not_Unclustered" = cluster$metagenome[2] -  cluster$metagenome[1])
+
+cluster_for_plot <- cluster_for_plot %>% pivot_longer(col = colnames(cluster_for_plot), names_to = c("Enriched", "Clustered_or_not"), values_to = "ncontigs", names_sep = "_")
+
+cluster_for_plot[cluster_for_plot$Enriched == "Not", "Enriched"] <- "Not enriched"
+
+cluster_for_plot_percent <- cluster_for_plot %>% group_by(Enriched) %>% mutate(ncontigs_percent = ncontigs/sum(ncontigs))
+
+
+
+cluster_plot <- cluster_for_plot_percent %>% ggplot() + geom_bar(aes(fill = Clustered_or_not, y = ncontigs_percent, x = Enriched), position = "stack", stat = "identity") +  labs(x = "", y = "Proportion clustered with RVD") +
+  theme_minimal() + geom_bracket(xmin = 1, xmax = 2, y.position = 1.05, label = "***") +
+  theme( legend.position = "bottom", legend.title = element_blank(), axis.title=element_text(size=10)) 
+
+cluster_plot
+
+```
+
+# add annotation
+```{r}
+clustered_enriched_y = (cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Enriched", "ncontigs_percent"] %>% unlist() + 1)/2
+
+unclustered_enriched_y = (cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Enriched", "ncontigs_percent"] %>% unlist())/2
+
+clustered_not_y = (cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs_percent"] %>% unlist() + 1)/2
+
+unclustered_not_y = (cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs_percent"] %>% unlist())/2
+
+clustered_enriched_anno <- cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Clustered" & cluster_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
+
+unclustered_enriched_anno = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
+
+clustered_not_anno = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Clustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+
+unclustered_not_anno = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+
+
+clustered_anno <- data.frame(x = c("Enriched", "Enriched", "Not enriched", "Not enriched"), y = c(clustered_enriched_y, unclustered_enriched_y, clustered_not_y, unclustered_not_y), anno = c(clustered_enriched_anno, unclustered_enriched_anno, clustered_not_anno, unclustered_not_anno))
+
+
+clustered_plot_final <- cluster_plot + annotate("text", x = clustered_anno$x, y = clustered_anno$y, label = clustered_anno$anno) +
+   geom_text(x = -Inf, y = Inf, label = "c", hjust = -0.5, vjust = 1)
+
+clustered_plot_final
+
+```
+
+# combine together
+```{r}
+plot_final <- ggarrange(annotation_bar_with_anno, NULL, ggarrange(lyso_plot_final, clustered_plot_final, widths = c(1, 1), nrow = 1), nrow =3, heights = c(0.8, 0.05, 1)) 
+
+plot_final
+
+ggsave("/fs/scratch/PAS0439/Ming/databases/anderson_2017_rumen_virome/anderson_comparison.pdf", plot_final, device = "pdf", width = 8, height = 8, units = "in")
+```

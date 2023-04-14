@@ -1,0 +1,48 @@
+---
+title: "global_map"
+author: "Ming Yan"
+date: "7/29/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r load library}
+library('rworldmap')
+library(tidyverse)
+meta <- read.csv('metadata.csv')
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+country <- c('Canada', 'China', 'India', 'Kenya', 'New Zealand', 'Sweden', 'United Kingdom', 'United States')
+nsamples <- c('c', 'e', 'a', 'b', 'b', 'a', 'e', 'd')
+op <- palette(c('blue', 'green', 'yellow', 'orange', 'red'))
+
+df <- data.frame(country, nsamples)
+
+svg("~/worldmap.svg", width = 5, height = 3)
+par(mai=c(0,0,0.0,0),xaxs="i",yaxs="i")
+sPDF <- joinCountryData2Map( df
+ , joinCode = "NAME"
+ , nameJoinColumn = "country")
+#mapParams <- mapCountryData( sPDF, nameColumnToPlot="nsamples"
+#, addLegend=FALSE,  mapTitle='' )
+mapCountryData( sPDF, nameColumnToPlot="nsamples", catMethod='categorical', colourPalette= 'palette', addLegend=FALSE,  mapTitle='' )
+
+dev.off() 
+ #do.call( addMapLegend, c(mapParams, legendWidth=0.5, legendMar = 2))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
