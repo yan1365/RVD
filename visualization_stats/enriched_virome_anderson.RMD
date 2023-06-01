@@ -111,14 +111,21 @@ lytic_not_y = (lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lyt
 
 lyso_not_y = (lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs_percent"] %>% unlist() + 1)/2
 
-lytic_enriched_anno <- lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
+lytic_enriched_anno_pre <- lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
 
-lyso_enriched_anno = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lysogenic" & lyso_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
+lyso_enriched_anno_pre = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lysogenic" & lyso_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
 
-lytic_not_anno = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+lytic_enriched_anno = paste(lytic_enriched_anno_pre, " (", round(lytic_enriched_anno_pre/(lytic_enriched_anno_pre+lyso_enriched_anno_pre)*100,2), "%)", sep = "")
 
-lyso_not_anno = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lysogenic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+lyso_enriched_anno = paste(lyso_enriched_anno_pre, " (", round(lyso_enriched_anno_pre/(lytic_enriched_anno_pre+lyso_enriched_anno_pre)*100,2), "%)", sep = "")
 
+lytic_not_anno_pre = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lytic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+
+lyso_not_anno_pre = lyso_for_plot_percent[lyso_for_plot_percent$lyso_or_lytic == "Lysogenic" & lyso_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+
+lytic_not_anno = paste(lytic_not_anno_pre, " (", round(lytic_not_anno_pre/(lytic_not_anno_pre+lyso_not_anno_pre)*100,2), "%)", sep = "")
+
+lyso_not_anno = paste(lyso_not_anno_pre, " (", round(lyso_not_anno_pre/(lytic_not_anno_pre+lyso_not_anno_pre)*100,2), "%)", sep = "")
 
 lyso_anno <- data.frame(x = c("Enriched", "Enriched", "Not enriched", "Not enriched"), y = c(lytic_enriched_y, lyso_enriched_y, lytic_not_y, lyso_not_y), anno = c(lytic_enriched_anno, lyso_enriched_anno, lytic_not_anno, lyso_not_anno))
 
@@ -159,13 +166,21 @@ clustered_not_y = (cluster_for_plot_percent[cluster_for_plot_percent$Clustered_o
 
 unclustered_not_y = (cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs_percent"] %>% unlist())/2
 
-clustered_enriched_anno <- cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Clustered" & cluster_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
+clustered_enriched_anno_pre <- cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Clustered" & cluster_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
 
-unclustered_enriched_anno = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
+unclustered_enriched_anno_pre = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Enriched", "ncontigs"] %>% unlist()
 
-clustered_not_anno = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Clustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+clustered_not_anno_pre = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Clustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
 
-unclustered_not_anno = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+unclustered_not_anno_pre = cluster_for_plot_percent[cluster_for_plot_percent$Clustered_or_not == "Unclustered" & cluster_for_plot_percent$Enriched == "Not enriched", "ncontigs"] %>% unlist()
+
+clustered_enriched_anno = paste(clustered_enriched_anno_pre, " (", round(clustered_enriched_anno_pre/(clustered_enriched_anno_pre+unclustered_enriched_anno_pre)*100,2), "%)", sep = "")
+
+unclustered_enriched_anno = paste(unclustered_enriched_anno_pre, " (", round(unclustered_enriched_anno_pre/(clustered_enriched_anno_pre+unclustered_enriched_anno_pre)*100,2), "%)", sep = "")
+
+clustered_not_anno = paste(clustered_not_anno_pre, " (", round(clustered_not_anno_pre/(clustered_not_anno_pre+unclustered_not_anno_pre)*100,2), "%)", sep = "")
+
+unclustered_not_anno = paste(unclustered_not_anno_pre, " (", round(unclustered_not_anno_pre/(clustered_not_anno_pre+unclustered_not_anno_pre)*100,2), "%)", sep = "")
 
 
 clustered_anno <- data.frame(x = c("Enriched", "Enriched", "Not enriched", "Not enriched"), y = c(clustered_enriched_y, unclustered_enriched_y, clustered_not_y, unclustered_not_y), anno = c(clustered_enriched_anno, unclustered_enriched_anno, clustered_not_anno, unclustered_not_anno))
