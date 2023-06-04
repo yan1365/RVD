@@ -67,7 +67,7 @@ annotation_bar <- data.frame(xmin = c("Enriched & Ion torrent PGM", "Enriched & 
 
 annotation_bar_with_anno <- vcontigs_ratio + geom_bracket(data = annotation_bar) + 
   scale_y_continuous(breaks = seq(0, 1, 0.2)) + 
-  geom_text(x = -Inf, y = Inf, label = "a", hjust = -0.5, vjust = 1) + labs(x = "")
+  geom_text(x = -Inf, y = Inf, label = "a", hjust = -0.5, vjust = 1) + labs(x = "") + scale_x_discrete(labels=c("Enriched & Ion torrent PGM" = "VLP-enriched & Ion torrent PGM", "Enriched & Deep Illumina Miseq" = "VLP-Enriched & Deep Illumina Miseq", "Not enriched & Ion torrent PGM" = "Bulk & Ion torrent PGM"))
 
 annotation_bar_with_anno
 ```
@@ -131,7 +131,7 @@ lyso_anno <- data.frame(x = c("Enriched", "Enriched", "Not enriched", "Not enric
 
 
 lyso_plot_final <- lyso_plot + annotate("text", x = lyso_anno$x, y = lyso_anno$y, label = lyso_anno$anno) +
-   geom_text(x = -Inf, y = Inf, label = "b", hjust = -0.5, vjust = 1)
+   geom_text(x = -Inf, y = Inf, label = "b", hjust = -0.5, vjust = 1) + scale_x_discrete(labels=c("Enriched" = "VLP-enriched", "Not enriched" = "Bulk"))
 
 lyso_plot_final
 ```
@@ -187,7 +187,7 @@ clustered_anno <- data.frame(x = c("Enriched", "Enriched", "Not enriched", "Not 
 
 
 clustered_plot_final <- cluster_plot + annotate("text", x = clustered_anno$x, y = clustered_anno$y, label = clustered_anno$anno) +
-   geom_text(x = -Inf, y = Inf, label = "c", hjust = -0.5, vjust = 1)
+   geom_text(x = -Inf, y = Inf, label = "c", hjust = -0.5, vjust = 1) + scale_x_discrete(labels=c("Enriched" = "VLP-enriched", "Not enriched" = "Bulk"))
 
 clustered_plot_final
 
@@ -199,5 +199,5 @@ plot_final <- ggarrange(annotation_bar_with_anno, NULL, ggarrange(lyso_plot_fina
 
 plot_final
 
-ggsave("/fs/scratch/PAS0439/Ming/databases/anderson_2017_rumen_virome/anderson_comparison.pdf", plot_final, device = "pdf", width = 8, height = 8, units = "in")
+ggsave("/fs/ess/PAS0439/MING/virome/checkv_trimmed_for_dowmstream/ecology/benchmark_anderson/anderson_comparison.pdf", plot_final, device = "pdf", width = 8, height = 8, units = "in")
 ```
